@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+ <!DOCTYPE mapper   
+   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+   <mapper namespace="com.myspring.config.BoardAccount">
+   <!-- 경로명 전부 적어야함 -->
+   
+   <sql id="search">
+   <where>
+   <if test="field=='writer' and word!=nulll">
+   writer like '%'||#{word}||'%'
+   </if>
+   <if test="field=='title' and word!=nulll">
+   title like '%'||#{word}||'%'
+   </if>
+   <if test="field=='content' and word!=nulll">
+   content like '%'||#{word}||'%'
+   </if>
+   </where>
+   </sql>
+   <!-- 새글 인서트 -->
+   <insert id="Insert" parameterType="dto">
+   insert into springboard values(springboard_seq.nextval,#{title},#{content},#{writer},to_char(sysdate,'yy-mm-dd HH24:MI:SS'),0,#{password},springboard_seq.nextval,0,0)
+   </insert>
+   <!-- 답글 인서트 -->
+   <insert id="insertOpinion" parameterType="dto">
+   insert into springboard values(springboard_seq.nextval,#{title},#{content},#{writer},to_char(sysdate,'yy-mm-dd HH24:MI:SS'),0,#{password},#{groups},#{boardlevel},#{steps})
+   </insert>
+   <!-- 댓글 인서트 -->
+   <insert id="com_insert" parameterType="cdto">
+   insert into springcomment values(springcomment_seq.nextval,#{boardnum},#{name},#{reply},to_char(sysdate,'yy-mm-dd HH24:MI:SS'),#{pass})
+   </insert>
+   
+   
+   
+   <select id = "selectList" parameterType="map" resultType="dto">
+   <![CDATA[
+   select * from (select rownum rn, aa.* from (select * from springboard ]]>
+    <include refid="search"></include> 
+    <![CDATA[
+    order by groups desc,steps)aa) where rn>=#{startRow} and rn <=#{endRow} order by rn
+      ]]>
+   </select>
+   
+   <select id="boardCount" resultType="Integer">
+   select count(*) from springboard
+   <include refid="search"></include>
+   </select>
+   
+   <select id = "viewBoard" parameterType="Integer" resultType="dto">
+   <!-- update springboard set hitcount=hitcount+1 where seq=#{seq} --> 
+   select * from springboard where seq = #{seq}
+   </select>
+   
+   <select id = "passcheck" parameterType="Integer" resultType="String">
+   select password from springboard where seq = #{seq} 
+   </select>
+   
+   <!-- 댓글 리스트 -->
+   <select id="com_select" parameterType="Integer" resultType="cdto">
+   select * from springcomment where boardnum=#{boardnum}
+   </select>
+   
+   
+   
+   <update id="UpdateOpinion" parameterType="dto">
+   <![CDATA[
+   update springboard set steps=steps+1 where groups=#{groups} and steps>#{steps}
+   ]]>
+   </update>
+   <update id="updateBoard" parameterType="dto">
+   update springboard set title=#{title}, content=#{content}, writer=#{writer},password=#{password} where seq =#{seq}
+   </update>
+   <update id="plusHitcount" parameterType="Integer">
+   update springboard set hitcount=hitcount+1 where seq=#{seq}
+   </update>
+   
+   <delete id = "deleteBoard" parameterType="Integer">
+   delete springboard where seq=#{seq}
+   </delete>
+   
+   </mapper>
